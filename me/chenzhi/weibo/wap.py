@@ -62,8 +62,8 @@ class Fetcher(object):
         return urllib2.urlopen(req, None, timeout).read()
 
 if __name__ == '__main__':
-    username = ""
-    password = ""
+    username = "xx@xx.com"
+    password = "xx"
     fetcher = Fetcher(username, password)
     fetcher.login(cookie_filename="cookie.txt")
     home_url = 'http://weibo.cn/?vt=4'

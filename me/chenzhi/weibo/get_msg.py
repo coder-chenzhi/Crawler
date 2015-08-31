@@ -18,8 +18,8 @@ def get_all_conversation_url(msg_url):
     print valid_links
 
 if __name__ == '__main__':
-    username = "coder.chenzhi@gmail.com"
-    password = "zhichen1994"
+    username = "xx@xx.com"
+    password = "xx"
     fetcher = Fetcher(username, password)
     fetcher.login(cookie_filename="cookie.txt")
     msg_url = 'http://weibo.cn/msg/?tf=5_010&vt=4'
