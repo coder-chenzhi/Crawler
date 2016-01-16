@@ -23,7 +23,9 @@ DEFAULT_NEXT_POSITION = 1000
 
 def extract_hongren(max_page_num=5):
     suffix = "hongren"
-    browser = Browser()
+    # 正常情况下，把driver文件所在路径加到Path环境变量里就可以了
+    # 但是我这里不知道怎么回事就是不行，干脆放在代码所在目录下面了
+    browser = Browser('chromedriver.exe')
     browser.get(BASE_URL + suffix)
     items = {}
     while True:

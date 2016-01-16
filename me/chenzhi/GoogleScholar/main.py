@@ -2,9 +2,11 @@ __author__ = 'chenzhi'
 
 
 import urllib2
+import time
 from bs4 import BeautifulSoup
 # you can change Ie to other browser, however remember to install webkit driver accordingly
-from selenium.webdriver import Ie as Browser
+from selenium.webdriver import Chrome as Browser
+from selenium.webdriver.common.by import By
 
 # url of google scholar
 url_base='https://scholar.google.com'
@@ -91,7 +93,7 @@ def extract_publication(profile_url, verbose=verbose_citation_list):
         publication_list=browser.find_elements_by_class_name('gsc_a_tr')
         for publication_item in publication_list:
             title=publication_item.find_element_by_class_name('gsc_a_at').text
-            print title,
+            print title
             author=publication_item.find_elements_by_class_name('gs_gray')[0].text.split(', ')
             vendor=publication_item.find_elements_by_class_name('gs_gray')[1].text
             try:
@@ -104,14 +106,21 @@ def extract_publication(profile_url, verbose=verbose_citation_list):
                 year=int(publication_item.find_element_by_class_name('gsc_a_h').text)
             except:
                 year=None
+            """
+            # to get citation for every paper, but will be detected as robot
             if citation>0 and verbose>=verbose_citation_list:
                 print 'and its citation list',
+                # to solve anti-crawl, but not work
+                # time.sleep(2)
                 cited_by=extract_citation_for_publication(link)
             else:
                 cited_by=None
+
             print 'finished'
             publication[title]={'link':link,'author':author,'vendor':vendor,'citation':citation, 'cited by': cited_by, 'year':year}
-        if not next_page(browser):
+            """
+            publication[title]={'link':link,'author':author,'vendor':vendor,'citation':citation, 'cited by': citation, 'year':year}
+        if not next_page_new(browser):
             break
     browser.close()
     return publication
@@ -122,7 +131,7 @@ def extract_citation_for_publication(link):
     @param[in]      profile_url     the link of google scholar profile you want to crawl
     @return         the list of articles as a list where each entry is dictionary
     """
-    browser=Browser()
+    browser=Browser('chromedriver.exe')
     citation={}
     # go the citation view
     # as the page is written is javascript, we are not able to get its content via urllib2
@@ -184,6 +193,35 @@ def next_page(browser):
             # there is one next
             return False
 
+# click the next button, if there is one
+# the next_page() can not work appropriately, it will crawl the last page again and again
+# because you will always find element identified by 'gs_n' and 'gsc_bpf_next',
+# but they are disabled if there is no next page
+def next_page_new(browser):
+    '''
+    the logic is a little weird, because we have used CSS_SELECTOR,
+    the enable button's class is ".gs_btnPR.gs_in_ib.gs_btn_half.gs_btn_srt"
+    the disable button is ".gs_btnPR.gs_in_ib.gs_btn_half.gs_btn_srt.gs_dis", the former is the subset of the latter
+    so if we use ".gs_btnPR.gs_in_ib.gs_btn_half.gs_btn_srt" to find button, we will find both enable button and disable button
+
+    :param browser:
+    :return:
+    '''
+    try:
+        # try button instaed
+        navigation=browser.find_element(By.CSS_SELECTOR, '.gs_btnPR.gs_in_ib.gs_btn_half.gs_btn_srt')
+        try:
+            browser.find_element(By.CSS_SELECTOR, '.gs_btnPR.gs_in_ib.gs_btn_half.gs_btn_srt.gs_dis')
+            return False
+        except:
+            navigation.click()
+            return True
+    except:
+        # there is one next
+        return False
+
 if __name__ == '__main__':
-    print extract_scholar('http://scholar.google.com/citations?user=88s55KAAAAAJ&hl=en')
+    publications = extract_publication('https://scholar.google.com/citations?user=0s1A5fwAAAAJ&hl=en')
+    for p in publications:
+        print p
 
