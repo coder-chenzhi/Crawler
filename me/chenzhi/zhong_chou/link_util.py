@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 import time
 
+
 def get_links(url, filter=None):
     r = requests.get(url)
     page = r.content
