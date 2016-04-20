@@ -104,7 +104,7 @@ def get_program_since_2013(content):
             avaiable_res.append("audio")
         if len(avaiable_res) == 0:
             avaiable_res.append("None")
-        talks.append("Title:{Title}\nType:{Type}\nSpeakers:{Speakers}\nDescription:{Description}\nResource:{Resource}".
+        talks.append("Title:{Title}\nType:{Type}\nSpeakers:{Speakers}\nDescription:{Description}\nResource:{Resource}\n".
                      format(Title=title, Type=talk_type, Speakers=speakers, Description=description,
                             Resource="/".join(avaiable_res)))
     return talks
@@ -141,6 +141,11 @@ def get_program_2012(content):
         except:
             speakers = "None"
 
+        try:
+            description = div_content.find("div", {'class': "field-name-field-paper-description-long"}).text.strip()
+        except:
+            description = "None"
+
         # what resource they provide for this talk
         avaiable_res = []
         if div_content.find("div", {"class": "pdf"}):
@@ -153,13 +158,77 @@ def get_program_2012(content):
             avaiable_res.append("audio")
         if len(avaiable_res) == 0:
             avaiable_res.append("None")
-        talks.append("Title:{Title}\nType:{Type}\nSpeakers:{Speakers}\nResource:{Resource}".
-                     format(Title=title, Type=talk_type, Speakers=speakers, Resource="/".join(avaiable_res)))
+        talks.append("Title:{Title}\nType:{Type}\nSpeakers:{Speakers}\nDescription:{Description}\nResource:{Resource}\n".
+                     format(Title=title, Type=talk_type, Speakers=speakers, Description=description,
+                            Resource="/".join(avaiable_res)))
     return talks
 
 
-def get_program_between_2011_and_2006(content):
-    pass
+def get_program_between_2011_and_2010(content):
+    """
+    :param content:
+    :return:
+    """
+    soup = BeautifulSoup(content, "html.parser")
+    techdesc = soup.find_all("p", {"class": "techdesc"})
+    talks = []
+    for talk in techdesc:
+        if talk.next.name == "a" and talk.next.has_attr("name"):
+            title = talk.find("b").text
+            corp = "/".join([a.text for a in talk.find_all("i")])
+            talks.append("Title:{Title}\nCorporation:{Corporation}\n".format(Title=title, Corporation=corp))
+    return talks
+
+
+def get_program_between_2011_and_2008(year, content):
+    """
+    get the talk title <p class="techdesc"></p>, which contains title and speakers information
+
+    but talk description is also warped in <p class="techdesc"></p>, but the content is only raw text,
+    we can use this characteristics to filter the talk description
+
+    and in 2008, talk mp3 resource is also warped in <p class="techdesc"></p>
+
+    :param content:
+    :return:
+    """
+    soup = BeautifulSoup(content, "html.parser")
+    techdesc = soup.find_all("p", {"class": "techdesc"})
+    talks = []
+    for talk in techdesc:
+        # filter mp3 paragraph
+        if "Listen in MP3 format" in talk.text:
+            continue
+        # filter description paragraph
+        if talk.find("b") is None or talk.find("i") is None:
+            continue
+        title = talk.find("b").text
+        if year == 2009 and ("p.m." in title or "a.m." in title):
+            title = talk.find_all("b")[1].text
+        corp = "/".join([a.text for a in talk.find_all("i")])
+        talks.append("Title:{Title}\nCorporation:{Corporation}\n".format(Title=title, Corporation=corp))
+    return talks
+
+
+def get_program_between_2007_and_2006(content):
+    """
+    get the talk title <p></p>, which contains title and speakers information.
+    All these <p></p> contains a <b></b> and at least one <i></i>, the former contains title,
+    the later contains speakers' corporations.
+
+    :param content:
+    :return:
+    """
+    soup = BeautifulSoup(content, "html.parser")
+    techdesc = soup.find_all("p")
+    talks = []
+    for talk in techdesc:
+        if talk.find("b") is None or talk.find("i") is None:
+            continue
+        title = talk.find("b").text
+        corp = "/".join([a.text for a in talk.find_all("i")])
+        talks.append("Title:{Title}\nCorporation:{Corporation}\n".format(Title=title, Corporation=corp))
+    return talks
 
 
 def get_program(year):
@@ -168,10 +237,14 @@ def get_program(year):
         return get_program_since_2013(content)
     elif year == 2012:
         return get_program_2012(content)
+    elif year >= 2008:
+        return get_program_between_2011_and_2008(year, content)
     elif year >= 2006:
-        return get_program_between_2011_and_2006(content)
-
+        return get_program_between_2007_and_2006(content)
+    else:
+        print "Can not handle!"
+        exit()
 
 if __name__ == "__main__":
     # print(get_conference_urls())
-    print("\n\n".join(get_program(2015)))
+    print("\n".join(get_program(2006)))
