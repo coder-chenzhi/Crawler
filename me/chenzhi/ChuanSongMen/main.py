@@ -54,4 +54,4 @@ def get_all_articles_for_year(ID, year):
 
 
 if __name__ == "__main__":
-    get_all_articles("love16po")
+    get_all_articles("zuiheikeji")
